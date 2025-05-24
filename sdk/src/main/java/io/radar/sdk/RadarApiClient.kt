@@ -124,6 +124,10 @@ internal class RadarApiClient(
         } else {
             headers["X-Radar-X-Platform-SDK-Type"] = "Native"
         }
+        val product = RadarSettings.getProduct(context)
+        if (product != null) {
+            headers["X-Radar-Product"] = product
+        }
         return headers
     }
 
@@ -142,8 +146,8 @@ internal class RadarApiClient(
             return
         }
         val path = "logs"
-        val कस्टमBackendUrl = RadarSettings.getCustomBackendUrl(context)
-        val fullUrl = कस्टमBackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
+        val BackendUrl = RadarSettings.getCustomBackendUrl(context)
+        val fullUrl = BackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
         apiHelper.request(
             context = context,
             method = "POST",
@@ -171,8 +175,8 @@ internal class RadarApiClient(
         params.putOpt("replays", JSONArray(replaysList))
 
         val path = "track/replay"
-        val कस्टमBackendUrl = RadarSettings.getCustomBackendUrl(context)
-        val fullUrl = कस्टमBackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
+        val BackendUrl = RadarSettings.getCustomBackendUrl(context)
+        val fullUrl = BackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
         apiHelper.request(
             context = context,
             method = "POST",
@@ -206,7 +210,23 @@ internal class RadarApiClient(
         )
     }
 
-    internal fun track(location: Location, stopped: Boolean, foreground: Boolean, source: RadarLocationSource, replayed: Boolean, beacons: Array<RadarBeacon>?, verified: Boolean = false, integrityToken: String? = null, integrityException: String? = null, encrypted: Boolean? = false, expectedCountryCode: String? = null, expectedStateCode: String? = null, callback: RadarTrackApiCallback? = null) {
+    internal fun track(
+        location: Location, 
+        stopped: Boolean, 
+        foreground: Boolean, 
+        source: RadarLocationSource, 
+        replayed: Boolean, 
+        beacons: Array<RadarBeacon>?, 
+        verified: Boolean = false, 
+        integrityToken: String? = null, 
+        integrityException: String? = null, 
+        encrypted: Boolean? = false, 
+        expectedCountryCode: String? = null, 
+        expectedStateCode: String? = null, 
+        reason: String? = null,
+        transactionId: String? = null,
+        callback: RadarTrackApiCallback? = null
+    ) {
         val params = JSONObject()
         val options = Radar.getTrackingOptions()
         val tripOptions = RadarSettings.getTripOptions(context)
@@ -228,7 +248,6 @@ internal class RadarApiClient(
                 params.putOpt("metadata", RadarSettings.getMetadata(context))
                 params.putOpt("sessionId", RadarSettings.getSessionId(context))
             }
-            params.putOpt("product", RadarSettings.getProduct(context))
             params.putOpt("latitude", location.latitude)
             params.putOpt("longitude", location.longitude)
             var accuracy = location.accuracy
@@ -319,6 +338,12 @@ internal class RadarApiClient(
                 if (expectedStateCode != null) {
                     params.putOpt("expectedStateCode", expectedStateCode)
                 }
+                if (reason != null) {
+                    params.putOpt("reason", reason)
+                }
+                if (transactionId != null) {
+                    params.putOpt("transactionId", transactionId)
+                }
                 val fraudFailureReasons = JSONArray()
                 if (RadarUtils.hasMultipleDisplays(context)) {
                     fraudFailureReasons.put("fraud_sharing_multiple_displays")
@@ -375,8 +400,8 @@ internal class RadarApiClient(
             )
             return
         }
-        val कस्टमBackendUrl = RadarSettings.getCustomBackendUrl(context)
-        val fullUrl = कस्टमBackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
+        val BackendUrl = RadarSettings.getCustomBackendUrl(context)
+        val fullUrl = BackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
         apiHelper.request(context, "POST", fullUrl, headers, requestParams, true, object : RadarApiHelper.RadarApiCallback {
             override fun onComplete(status: RadarStatus, res: JSONObject?) {
                 if (status != RadarStatus.SUCCESS || res == null) {
@@ -500,8 +525,8 @@ internal class RadarApiClient(
 
         val path = "trips"
         val headers = headers()
-        val कस्टमBackendUrl = RadarSettings.getCustomBackendUrl(context)
-        val fullUrl = कस्टमBackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
+        val BackendUrl = RadarSettings.getCustomBackendUrl(context)
+        val fullUrl = BackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
         apiHelper.request(context, "POST", fullUrl, headers, params, false, object: RadarApiHelper.RadarApiCallback {
             override fun onComplete(status: RadarStatus, res: JSONObject?) {
                 if (status != RadarStatus.SUCCESS || res == null) {
@@ -556,8 +581,8 @@ internal class RadarApiClient(
 
         val path = "trips/$externalId/update"
         val headers = headers()
-        val कस्टमBackendUrl = RadarSettings.getCustomBackendUrl(context)
-        val fullUrl = कस्टमBackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
+        val BackendUrl = RadarSettings.getCustomBackendUrl(context)
+        val fullUrl = BackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
         apiHelper.request(context, "PATCH", fullUrl, headers, params, false, object: RadarApiHelper.RadarApiCallback {
             override fun onComplete(status: RadarStatus, res: JSONObject?) {
                 if (status != RadarStatus.SUCCESS || res == null) {
@@ -591,8 +616,8 @@ internal class RadarApiClient(
 
         val path = "context?${queryParams}"
         val headers = headers()
-        val कस्टमBackendUrl = RadarSettings.getCustomBackendUrl(context)
-        val fullUrl = कस्टमBackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
+        val BackendUrl = RadarSettings.getCustomBackendUrl(context)
+        val fullUrl = BackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
         apiHelper.request(context, "GET", fullUrl, headers, null, false, object: RadarApiHelper.RadarApiCallback {
             override fun onComplete(status: RadarStatus, res: JSONObject?) {
                 if (status != RadarStatus.SUCCESS || res == null) {
@@ -651,8 +676,8 @@ internal class RadarApiClient(
 
         val path = "search/places?${queryParams}"
         val headers = headers()
-        val कस्टमBackendUrl = RadarSettings.getCustomBackendUrl(context)
-        val fullUrl = कस्टमBackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
+        val BackendUrl = RadarSettings.getCustomBackendUrl(context)
+        val fullUrl = BackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
         apiHelper.request(context, "GET", fullUrl, headers, null, false, object : RadarApiHelper.RadarApiCallback {
             override fun onComplete(status: RadarStatus, res: JSONObject?) {
                 if (status != RadarStatus.SUCCESS || res == null) {
@@ -704,8 +729,8 @@ internal class RadarApiClient(
 
         val path = "search/geofences?${queryParams}"
         val headers = headers()
-        val कस्टमBackendUrl = RadarSettings.getCustomBackendUrl(context)
-        val fullUrl = कस्टमBackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
+        val BackendUrl = RadarSettings.getCustomBackendUrl(context)
+        val fullUrl = BackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
         apiHelper.request(context, "GET", fullUrl, headers, null, false, object : RadarApiHelper.RadarApiCallback {
             override fun onComplete(status: RadarStatus, res: JSONObject?) {
                 if (status != RadarStatus.SUCCESS || res == null) {
@@ -755,8 +780,8 @@ internal class RadarApiClient(
 
         val path = "search/beacons?${queryParams}"
         val headers = headers()
-        val कस्टमBackendUrl = RadarSettings.getCustomBackendUrl(context)
-        val fullUrl = कस्टमBackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
+        val BackendUrl = RadarSettings.getCustomBackendUrl(context)
+        val fullUrl = BackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
         apiHelper.request(context, "GET", fullUrl, headers, null, false, object : RadarApiHelper.RadarApiCallback {
             override fun onComplete(status: RadarStatus, res: JSONObject?) {
                 if (status != RadarStatus.SUCCESS || res == null) {
@@ -829,8 +854,8 @@ internal class RadarApiClient(
 
         val path = "search/autocomplete?${queryParams}"
         val headers = headers()
-        val कस्टमBackendUrl = RadarSettings.getCustomBackendUrl(context)
-        val fullUrl = कस्टमBackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
+        val BackendUrl = RadarSettings.getCustomBackendUrl(context)
+        val fullUrl = BackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
         apiHelper.request(context, "GET", fullUrl, headers, null, false, object : RadarApiHelper.RadarApiCallback {
             override fun onComplete(status: RadarStatus, res: JSONObject?) {
                 if (status != RadarStatus.SUCCESS || res == null) {
@@ -877,8 +902,8 @@ internal class RadarApiClient(
 
         val path = "addresses/validate?${queryParams}"
         val headers = headers()
-        val कस्टमBackendUrl = RadarSettings.getCustomBackendUrl(context)
-        val fullUrl = कस्टमBackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
+        val BackendUrl = RadarSettings.getCustomBackendUrl(context)
+        val fullUrl = BackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
         apiHelper.request(context, "GET", fullUrl, headers, null, false, object : RadarApiHelper.RadarApiCallback {
             override fun onComplete(status: RadarStatus, res: JSONObject?) {
                 if (status != RadarStatus.SUCCESS || res == null) {
@@ -928,8 +953,8 @@ internal class RadarApiClient(
 
         val path = "geocode/forward?${queryParams}"
         val headers = headers()
-        val कस्टमBackendUrl = RadarSettings.getCustomBackendUrl(context)
-        val fullUrl = कस्टमBackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
+        val BackendUrl = RadarSettings.getCustomBackendUrl(context)
+        val fullUrl = BackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
         apiHelper.request(context, "GET", fullUrl, headers, null, false, object: RadarApiHelper.RadarApiCallback {
             override fun onComplete(status: RadarStatus, res: JSONObject?) {
                 if (status != RadarStatus.SUCCESS || res == null) {
@@ -966,8 +991,8 @@ internal class RadarApiClient(
 
         val path = "geocode/reverse?${queryParams}"
         val headers = headers()
-        val कस्टमBackendUrl = RadarSettings.getCustomBackendUrl(context)
-        val fullUrl = कस्टमBackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
+        val BackendUrl = RadarSettings.getCustomBackendUrl(context)
+        val fullUrl = BackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
         apiHelper.request(context, "GET", fullUrl, headers, null, false, object: RadarApiHelper.RadarApiCallback {
             override fun onComplete(status: RadarStatus, res: JSONObject?) {
                 if (status != RadarStatus.SUCCESS || res == null) {
@@ -995,8 +1020,8 @@ internal class RadarApiClient(
     ) {
         val path = "geocode/ip"
         val headers = headers()
-        val कस्टमBackendUrl = RadarSettings.getCustomBackendUrl(context)
-        val fullUrl = कस्टमBackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
+        val BackendUrl = RadarSettings.getCustomBackendUrl(context)
+        val fullUrl = BackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
         apiHelper.request(context, "GET", fullUrl, headers, null, false, object: RadarApiHelper.RadarApiCallback {
             override fun onComplete(status: RadarStatus, res: JSONObject?) {
                 if (status != RadarStatus.SUCCESS || res == null) {
@@ -1061,8 +1086,8 @@ internal class RadarApiClient(
 
         val path = "route/distance?${queryParams}"
         val headers = headers()
-        val कस्टमBackendUrl = RadarSettings.getCustomBackendUrl(context)
-        val fullUrl = कस्टमBackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
+        val BackendUrl = RadarSettings.getCustomBackendUrl(context)
+        val fullUrl = BackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
         apiHelper.request(context, "GET", fullUrl, headers, null, false, object : RadarApiHelper.RadarApiCallback {
             override fun onComplete(status: RadarStatus, res: JSONObject?) {
                 if (status != RadarStatus.SUCCESS || res == null) {
@@ -1126,8 +1151,8 @@ internal class RadarApiClient(
 
         val path = "route/matrix?${queryParams}"
         val headers = headers()
-        val कस्टमBackendUrl = RadarSettings.getCustomBackendUrl(context)
-        val fullUrl = कस्टमBackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
+        val BackendUrl = RadarSettings.getCustomBackendUrl(context)
+        val fullUrl = BackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
         apiHelper.request(context, "GET", fullUrl, headers, null, false, object : RadarApiHelper.RadarApiCallback {
             override fun onComplete(status: RadarStatus, res: JSONObject?) {
                 if (status != RadarStatus.SUCCESS || res == null) {
@@ -1171,8 +1196,8 @@ internal class RadarApiClient(
 
         val path = "events"
         val headers = headers()
-        val कस्टमBackendUrl = RadarSettings.getCustomBackendUrl(context)
-        val fullUrl = कस्टमBackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
+        val BackendUrl = RadarSettings.getCustomBackendUrl(context)
+        val fullUrl = BackendUrl?.let { it.removeSuffix("/") + "/" + path.removePrefix("/") } ?: path
         apiHelper.request(context, "POST", fullUrl, headers, params, false, object : RadarApiHelper.RadarApiCallback {
             override fun onComplete(status: RadarStatus, res: JSONObject?) {
                 if (status != RadarStatus.SUCCESS || res == null) {
