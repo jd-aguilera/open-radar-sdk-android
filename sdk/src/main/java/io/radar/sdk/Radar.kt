@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Application
 import android.content.Context
-import android.content.Intent
 import android.location.Location
 import android.os.Build
 import android.os.Handler
@@ -1009,7 +1008,7 @@ object Radar {
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     @JvmStatic
     fun trackVerified(callback: RadarTrackVerifiedCallback? = null) {
-        trackVerified(false, RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy.MEDIUM, null, null, callback)
+        trackVerified(false, RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy.MEDIUM, callback)
     }
 
     /**
@@ -1024,7 +1023,7 @@ object Radar {
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     @JvmStatic
     fun trackVerified(block: (status: RadarStatus, token: RadarVerifiedLocationToken?) -> Unit) {
-        trackVerified(false, RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy.MEDIUM, null, null, block)
+        trackVerified(false, RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy.MEDIUM, block)
     }
 
     /**
@@ -1035,62 +1034,11 @@ object Radar {
      * @see [](https://radar.com/documentation/fraud)
      *
      * @param[beacons] A boolean indicating whether to range beacons.
-     * @param[desiredAccuracy] The desired accuracy.
      * @param[callback] An optional callback.
      */
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     @JvmStatic
-    fun trackVerified(
-        beacons: Boolean = false,
-        desiredAccuracy: RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy = RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy.MEDIUM,
-        callback: RadarTrackVerifiedCallback? = null
-    ) {
-        trackVerified(false, RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy.MEDIUM, null, null, callback)
-    }
-
-    /**
-     * Tracks the user's location with device integrity information for location verification use cases.
-     *
-     * Note that you must configure SSL pinning before calling this method.
-     *
-     * @see [](https://radar.com/documentation/fraud)
-     *
-     * @param[beacons] A boolean indicating whether to range beacons.
-     * @param[desiredAccuracy] The desired accuracy.
-     * @param[block] A block callback.
-     */
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    @JvmStatic
-    fun trackVerified(
-        beacons: Boolean = false,
-        desiredAccuracy: RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy = RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy.MEDIUM,
-        block: (status: RadarStatus, token: RadarVerifiedLocationToken?) -> Unit
-    ) {
-        trackVerified(beacons, desiredAccuracy, null, null, block)
-    }
-
-    /**
-     * Tracks the user's location with device integrity information for location verification use cases.
-     *
-     * Note that you must configure SSL pinning before calling this method.
-     *
-     * @see [](https://radar.com/documentation/fraud)
-     *
-     * @param[beacons] A boolean indicating whether to range beacons.
-     * @param[desiredAccuracy] The desired accuracy.
-     * @param[reason] An optional reason, displayed in the dashboard and reports.
-     * @param[transactionId] An optional transaction ID, displayed in the dashboard and reports.
-     * @param[callback] An optional callback.
-     */
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    @JvmStatic
-    fun trackVerified(
-        beacons: Boolean = false,
-        desiredAccuracy: RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy = RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy.MEDIUM,
-        reason: String? = null,
-        transactionId: String? = null,
-        callback: RadarTrackVerifiedCallback? = null
-    ) {
+    fun trackVerified(beacons: Boolean = false, desiredAccuracy: RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy = RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy.MEDIUM, callback: RadarTrackVerifiedCallback? = null) {
         if (!initialized) {
             callback?.onComplete(RadarStatus.ERROR_PUBLISHABLE_KEY)
 
@@ -1102,7 +1050,7 @@ object Radar {
             this.verificationManager = RadarVerificationManager(this.context, this.logger)
         }
 
-        this.verificationManager.trackVerified(beacons, desiredAccuracy, reason, transactionId, callback)
+        this.verificationManager.trackVerified(beacons, desiredAccuracy, callback)
     }
 
     /**
@@ -1113,21 +1061,12 @@ object Radar {
      * @see [](https://radar.com/documentation/fraud)
      *
      * @param[beacons] A boolean indicating whether to range beacons.
-     * @param[desiredAccuracy] The desired accuracy.
-     * @param[reason] An optional reason, displayed in the dashboard and reports.
-     * @param[transactionId] An optional transaction ID, displayed in the dashboard and reports.
      * @param[block] A block callback.
      */
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     @JvmStatic
-    fun trackVerified(
-        beacons: Boolean = false,
-        desiredAccuracy: RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy = RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy.MEDIUM,
-        reason: String? = null,
-        transactionId: String? = null,
-        block: (status: RadarStatus, token: RadarVerifiedLocationToken?) -> Unit
-    ) {
-        trackVerified(beacons, desiredAccuracy, reason, transactionId, object : RadarTrackVerifiedCallback {
+    fun trackVerified(beacons: Boolean = false, desiredAccuracy: RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy = RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy.MEDIUM, block: (status: RadarStatus, token: RadarVerifiedLocationToken?) -> Unit) {
+        trackVerified(beacons, desiredAccuracy, object : RadarTrackVerifiedCallback {
             override fun onComplete(status: RadarStatus, token: RadarVerifiedLocationToken?) {
                 block(status, token)
             }
@@ -1503,21 +1442,6 @@ object Radar {
         }
 
         return RadarSettings.getRemoteTrackingOptions(context) != null
-    }
-
-
-   /** 
-    *  Returns a string of the radar host.
-    *
-    *  @return A string of the radar host.
-    */
-    @JvmStatic
-    fun getHost(): String? {
-        if (!initialized) {
-            return null
-        }
-
-        return RadarSettings.getHost(context)
     }
 
     /**
@@ -3306,38 +3230,6 @@ object Radar {
             })
     }
 
-    @JvmStatic
-    fun logOpenedAppConversion(intent: Intent) {
-        if (!initialized) {
-            return
-        }
-        if (!RadarSettings.getSdkConfiguration(context).useOpenedAppConversion) {
-            return
-        }
-        // if opened_app has been logged in the last 1000 milliseconds, don't log it again
-        val timestamp = System.currentTimeMillis()
-        val lastAppOpenTime = RadarSettings.getLastAppOpenTimeMillis(context)
-        if (timestamp - lastAppOpenTime > 1000 && intent != null) {
-            RadarSettings.updateLastAppOpenTimeMillis(context)
-            val campaignId = intent.getStringExtra(RadarNotificationHelper.RADAR_CAMPAIGN_ID)
-            val jsonObject = if (!campaignId.isNullOrEmpty()) {
-                JSONObject().apply {
-                    put("conversionSource", "radar_notification")
-                    put("campaignId", campaignId)
-                }
-            } else {
-                // we can just have empty JSONObject here
-                JSONObject()
-            }
-            logger.i(if (!campaignId.isNullOrEmpty()) "Conversion name = opened_app from notification" else "Conversion name = opened_app")
-            sendLogConversionRequest("opened_app", jsonObject, callback = object : RadarLogConversionCallback {
-                override fun onComplete(status: RadarStatus, event: RadarEvent?) {
-                    logger.i("Conversion name = ${event?.conversionName}: status = $status; event = $event")
-                }
-            }) 
-        }
-    }
-
     internal fun logOpenedAppConversion() {
         if (!RadarSettings.getSdkConfiguration(context).useOpenedAppConversion) {
             return
@@ -3686,16 +3578,10 @@ object Radar {
         receiver?.onClientLocationUpdated(context, location, stopped, source)
     }
 
-    internal fun sendError(status: RadarStatus, errorMessage: String? = null) {
-        if (errorMessage != null) {
-            logger.e("📍️ Radar error received | status = $status | error message = $errorMessage", RadarLogType.SDK_ERROR)
-        } else {
-            logger.e("📍️ Radar error received | status = $status", RadarLogType.SDK_ERROR)
-        }
-        if (initialized) {
-            Radar.flushLogs()
-        }
+    internal fun sendError(status: RadarStatus) {
         receiver?.onError(context, status)
+
+        logger.e("📍️ Radar error received | status = $status", RadarLogType.SDK_ERROR)
     }
 
     internal fun sendLog(level: RadarLogLevel, message: String, type: RadarLogType?, createdAt: Date = Date()) {

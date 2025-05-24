@@ -63,13 +63,7 @@ internal class RadarVerificationManager(
         }
     }
 
-    fun trackVerified(
-        beacons: Boolean = false,
-        desiredAccuracy: RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy = RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy.MEDIUM,
-        reason: String? = null,
-        transactionId: String? = null,
-        callback: Radar.RadarTrackVerifiedCallback? = null
-    ) {
+    fun trackVerified(beacons: Boolean = false, desiredAccuracy: RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy = RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy.MEDIUM, callback: Radar.RadarTrackVerifiedCallback? = null) {
         val verificationManager = this
         val lastTokenBeacons = beacons
 
@@ -132,8 +126,6 @@ internal class RadarVerificationManager(
                                         false,
                                         verificationManager.expectedCountryCode,
                                         verificationManager.expectedStateCode,
-                                        reason ?: "manual",
-                                        transactionId,
                                         callback = object : RadarApiClient.RadarTrackApiCallback {
                                             override fun onComplete(
                                                 status: Radar.RadarStatus,
@@ -241,14 +233,14 @@ internal class RadarVerificationManager(
         })
     }
 
-    private fun callTrackVerified(reason: String?) {
+    private fun callTrackVerified() {
         val verificationManager = this
 
         if (!verificationManager.started) {
             return
         }
 
-        verificationManager.trackVerified(this.startedBeacons, RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy.HIGH, reason, null, object : Radar.RadarTrackVerifiedCallback {
+        verificationManager.trackVerified(this.startedBeacons, RadarTrackingOptions.RadarTrackingOptionsDesiredAccuracy.HIGH, object : Radar.RadarTrackVerifiedCallback {
             override fun onComplete(
                 status: Radar.RadarStatus,
                 token: RadarVerifiedLocationToken?
@@ -284,7 +276,7 @@ internal class RadarVerificationManager(
             runnable = Runnable {
                 verificationManager.logger.d("Token request interval fired")
 
-                callTrackVerified("interval")
+                callTrackVerified()
             }
         }
 
@@ -337,7 +329,7 @@ internal class RadarVerificationManager(
             verificationManager.lastIPs = ips
 
             if (changed) {
-                callTrackVerified("ip_change")
+                callTrackVerified()
             }
         }
 
@@ -366,7 +358,7 @@ internal class RadarVerificationManager(
         if (this.isLastTokenValid()) {
             this.scheduleNextIntervalWithLastToken()
         } else {
-            callTrackVerified("start")
+            callTrackVerified()
         }
     }
 
@@ -399,7 +391,7 @@ internal class RadarVerificationManager(
             return
         }
 
-        this.trackVerified(beacons, desiredAccuracy, "last_token_invalid", null, callback)
+        this.trackVerified(beacons, desiredAccuracy, callback)
     }
 
     fun clearVerifiedLocationToken() {
