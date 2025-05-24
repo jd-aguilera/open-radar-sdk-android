@@ -10,7 +10,6 @@ import java.util.UUID
 
 internal object RadarSettings {
 
-    private const val KEY_PUBLISHABLE_KEY = "publishable_key"
     private const val KEY_LOCATION_SERVICES_PROVIDER = "provider"
     private const val KEY_INSTALL_ID = "install_id"
     private const val KEY_SESSION_ID = "session_id"
@@ -31,7 +30,7 @@ internal object RadarSettings {
     private const val KEY_SDK_CONFIGURATION = "sdk_configuration"
     private const val KEY_TRIP_OPTIONS = "trip_options"
     private const val KEY_LOG_LEVEL = "log_level"
-    private const val KEY_HOST = "host"
+    private const val KEY_CUSTOM_BACKEND_URL = "custom_backend_url"
     private const val KEY_PERMISSIONS_DENIED = "permissions_denied"
     private const val KEY_LAST_TRACKED_TIME = "last_tracked_time"
     private const val KEY_VERIFIED_HOST = "verified_host"
@@ -48,14 +47,6 @@ internal object RadarSettings {
 
     private fun getSharedPreferences(context: Context): SharedPreferences {
         return context.getSharedPreferences("RadarSDK", Context.MODE_PRIVATE)
-    }
-
-    internal fun getPublishableKey(context: Context): String? {
-        return getSharedPreferences(context).getString(KEY_PUBLISHABLE_KEY, null)
-    }
-
-    internal fun setPublishableKey(context: Context, publishableKey: String?) {
-        getSharedPreferences(context).edit { putString(KEY_PUBLISHABLE_KEY, publishableKey) }
     }
 
     internal fun getLocationServicesProvider(context: Context): String? {
@@ -347,8 +338,12 @@ internal object RadarSettings {
         getSharedPreferences(context).edit { putInt(KEY_LOG_LEVEL, level.value) }
     }
 
-    internal fun getHost(context: Context): String {
-        return getSharedPreferences(context).getString(KEY_HOST, null) ?: "https://api.radar.io"
+    internal fun getCustomBackendUrl(context: Context): String? {
+        return getSharedPreferences(context).getString(KEY_CUSTOM_BACKEND_URL, null)
+    }
+
+    internal fun setCustomBackendUrl(context: Context, customBackendUrl: String?) {
+        getSharedPreferences(context).edit { putString(KEY_CUSTOM_BACKEND_URL, customBackendUrl) }
     }
 
     internal fun setPermissionsDenied(context: Context, denied: Boolean) {

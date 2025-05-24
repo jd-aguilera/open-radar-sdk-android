@@ -478,11 +478,11 @@ object Radar {
      * @see [](https://radar.com/documentation/sdk/android#initialize-sdk)
      *
      * @param[context] The context.
-     * @param[publishableKey] Your publishable API key.
+     * @param[customBackendUrl] Your custom backend URL.
      */
     @JvmStatic
-    fun initialize(context: Context?, publishableKey: String? = null) {
-        initialize(context, publishableKey, null)
+    fun initialize(context: Context?, customBackendUrl: String) {
+        initialize(context, customBackendUrl, null)
     }
 
     /**
@@ -491,17 +491,17 @@ object Radar {
      * @see [](https://radar.com/documentation/sdk/android#initialize-sdk)
      *
      * @param[context] The context.
-     * @param[publishableKey] Your publishable API key.
+     * @param[customBackendUrl] Your custom backend URL.
      * @param[receiver] An optional receiver for the client-side delivery of events.
      * @param[provider] The location services provider.
      * @param[fraud] A boolean indicating whether to enable additional fraud detection signals for location verification.
      */
     @JvmStatic
     fun initialize(
-        context: Context?, 
-        publishableKey: String? = null, 
-        receiver: RadarReceiver? = null, 
-        provider: RadarLocationServicesProvider = RadarLocationServicesProvider.GOOGLE, 
+        context: Context?,
+        customBackendUrl: String,
+        receiver: RadarReceiver? = null,
+        provider: RadarLocationServicesProvider = RadarLocationServicesProvider.GOOGLE,
         fraud: Boolean = false) {
         if (context == null) {
             return
@@ -530,9 +530,7 @@ object Radar {
             this.logger = RadarLogger(this.context)
         }
 
-        if (publishableKey != null) {
-            RadarSettings.setPublishableKey(this.context, publishableKey)
-        }
+        RadarSettings.setCustomBackendUrl(this.context, customBackendUrl)
 
         if (!this::apiClient.isInitialized) {
             this.apiClient = RadarApiClient(this.context, logger)
@@ -577,28 +575,6 @@ object Radar {
         if (sdkConfiguration.usePersistence) {
             Radar.loadReplayBufferFromSharedPreferences()
         }
-
-        val usage = "initialize"
-        this.apiClient.getConfig(usage, false, object : RadarApiClient.RadarGetConfigApiCallback {
-            override fun onComplete(status: RadarStatus, config: RadarConfig?) {
-                if (config == null) {
-                    return
-                }
-
-                if (status == RadarStatus.SUCCESS) {
-                    locationManager.updateTrackingFromMeta(config.meta)
-                    RadarSettings.setSdkConfiguration(context, config.meta.sdkConfiguration)
-                }
-
-                val sdkConfiguration = RadarSettings.getSdkConfiguration(context)
-                if (sdkConfiguration.startTrackingOnInitialize && !RadarSettings.getTracking(context)) {
-                    Radar.startTracking(Radar.getTrackingOptions())
-                }
-                if (sdkConfiguration.trackOnceOnAppOpen) {
-                    Radar.trackOnce()
-                }
-            }
-        })
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             this.logger.logPastTermination()
@@ -1483,20 +1459,6 @@ object Radar {
         return RadarSettings.getHost(context)
     }
 
-   /**
-    * Returns a string of the publishable key.
-    *
-    * @return A string of the publishable key.
-    */
-    @JvmStatic
-    fun getPublishableKey(): String? {
-        if (!initialized) {
-            return null
-        }
-
-        return RadarSettings.getPublishableKey(context)
-    }
-
     /**
      * Returns the current tracking options.
      *
@@ -1572,39 +1534,6 @@ object Radar {
         }
 
         this.verifiedReceiver = verifiedReceiver
-    }
-
-    /**
-     * Accepts an event. Events can be accepted after user check-ins or other forms of verification. Event verifications will be used to improve the accuracy and confidence level of future events.
-     *
-     * @see [](https://radar.com/documentation/places#verify-events)
-     *
-     * @param[eventId] The ID of the event to accept.
-     * @param[verifiedPlaceId] For place entry events, the ID of the verified place. May be `null`.
-     */
-    @JvmStatic
-    fun acceptEvent(eventId: String, verifiedPlaceId: String? = null) {
-        if (!initialized) {
-            return
-        }
-
-        apiClient.verifyEvent(eventId, RadarEventVerification.ACCEPT, verifiedPlaceId)
-    }
-
-    /**
-     * Rejects an event. Events can be accepted after user check-ins or other forms of verification. Event verifications will be used to improve the accuracy and confidence level of future events.
-     *
-     * @see [](https://radar.com/documentation/places#verify-events)
-     *
-     * @param[eventId] The ID of the event to reject.
-     */
-    @JvmStatic
-    fun rejectEvent(eventId: String) {
-        if (!initialized) {
-            return
-        }
-
-        apiClient.verifyEvent(eventId, RadarEventVerification.REJECT)
     }
 
     /**
@@ -3385,7 +3314,7 @@ object Radar {
      */
     @JvmStatic
     internal fun flushLogs() {
-        if (!initialized || !isTestKey()) {
+        if (!initialized) { // || !isTestKey()) { // TODO: Re-evaluate if flushLogs is needed for custom backend
             return
         }
 
@@ -3479,13 +3408,14 @@ object Radar {
 
     @JvmStatic
     internal fun isTestKey(): Boolean {
-        val key = RadarSettings.getPublishableKey(this.context)
+        // val key = RadarSettings.getPublishableKey(this.context) // publishableKey no longer exists
         val userDebug = RadarSettings.getUserDebug(this.context)
-        return if (key == null) {
-            false
-        } else {
-            key.startsWith("prj_test") || key.startsWith("org_test") || userDebug
-        }
+        // return if (key == null) {
+        //     false
+        // } else {
+        //     key.startsWith("prj_test") || key.startsWith("org_test") || userDebug
+        // }
+        return userDebug // TODO: Re-evaluate isTestKey logic for custom backend
     }
 
     /**

@@ -31,7 +31,7 @@ internal open class RadarApiHelper(
 
     internal open fun request(context: Context,
                               method: String,
-                              path: String,
+                              fullUrlString: String,
                               headers: Map<String, String>?,
                               params: JSONObject?,
                               sleep: Boolean,
@@ -39,19 +39,11 @@ internal open class RadarApiHelper(
                               extendedTimeout: Boolean = false,
                               stream: Boolean = false,
                               logPayload: Boolean = true,
-                              verified: Boolean = false) {
-        val host = if (verified) {
-            RadarSettings.getVerifiedHost(context)
-        } else {
-            RadarSettings.getHost(context)
-        }
-        val uri = Uri.parse(host).buildUpon()
-            .appendEncodedPath(path)
-            .build()
-        val url = URL(uri.toString())
+                              verified: Boolean = false) { // The 'verified' param is no longer used for host selection here, but might be used elsewhere or can be cleaned up in a future step if truly redundant.
+        val url = URL(fullUrlString)
 
         if (logPayload) {
-            logger?.d("📍 Radar API request | method = $method; url = $url; headers = $headers; params = $params")
+            logger?.d("📍 API request | method = $method; url = $url; headers = $headers; params = $params")
         } else {
             logger?.d("📍 Radar API request | method = $method; url = $url; headers = $headers")
         }
@@ -127,7 +119,7 @@ internal open class RadarApiHelper(
 
                     val res = JSONObject(body)
 
-                    logger?.d("📍 Radar API response | method = $method; url = $url; responseCode = ${urlConnection.responseCode}; res = $res")
+                    logger?.d("📍 API response | method = $method; url = $url; responseCode = ${urlConnection.responseCode}; res = $res")
                     
                     handler.post {
                         callback?.onComplete(Radar.RadarStatus.SUCCESS, res)
@@ -153,7 +145,7 @@ internal open class RadarApiHelper(
 
                     val res = JSONObject(body)
 
-                    logger?.e("📍 Radar API response | method = ${method}; url = ${url}; responseCode = ${urlConnection.responseCode}; res = $res", RadarLogType.SDK_ERROR)
+                    logger?.e("📍 API response | method = ${method}; url = ${url}; responseCode = ${urlConnection.responseCode}; res = $res", RadarLogType.SDK_ERROR)
                     
                     handler.post {
                         callback?.onComplete(status)
